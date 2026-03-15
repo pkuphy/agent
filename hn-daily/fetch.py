@@ -49,7 +49,7 @@ async def summarize(client: httpx.AsyncClient, sem: asyncio.Semaphore, story: di
     payload = {
         "model": KIMI_MODEL,
         "messages": [{"role": "user", "content": prompt}],
-        "temperature": 0.6,
+        "temperature": 1.0,
         "max_tokens": 100,
     }
     headers = {
