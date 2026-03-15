@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HN Daily — {{ today }}</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #f6f6ef;
+    color: #333;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 24px 16px 48px;
+  }
+  header {
+    border-bottom: 2px solid #ff6600;
+    padding-bottom: 12px;
+    margin-bottom: 24px;
+  }
+  header h1 { font-size: 1.4rem; color: #ff6600; }
+  header .meta { font-size: 0.8rem; color: #888; margin-top: 4px; }
+  .story {
+    background: #fff;
+    border-radius: 6px;
+    padding: 14px 18px;
+    margin-bottom: 10px;
+    border-left: 3px solid #ff6600;
+  }
+  .story-header { display: flex; align-items: baseline; gap: 10px; }
+  .story-num { font-size: 0.85rem; color: #aaa; min-width: 24px; }
+  .story-title a {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1a1a1a;
+    text-decoration: none;
+  }
+  .story-title a:hover { color: #ff6600; }
+  .story-meta { font-size: 0.78rem; color: #888; margin-top: 5px; }
+  .story-meta a { color: #888; text-decoration: none; }
+  .story-meta a:hover { color: #ff6600; }
+  .story-summary {
+    font-size: 0.88rem;
+    color: #555;
+    margin-top: 7px;
+    line-height: 1.5;
+    border-top: 1px solid #f0f0f0;
+    padding-top: 7px;
+  }
+  footer {
+    margin-top: 36px;
+    padding-top: 16px;
+    border-top: 1px solid #ddd;
+    font-size: 0.8rem;
+    color: #aaa;
+  }
+  footer a { color: #aaa; text-decoration: none; margin-right: 8px; }
+  footer a:hover { color: #ff6600; }
+</style>
+</head>
+<body>
+<header>
+  <h1>HackerNews Daily — {{ today }}</h1>
+  <div class="meta">Top {{ items|length }} · 由 Kimi K2.5 总结 · 生成于 {{ generated_at }}</div>
+</header>
+
+{% for item in items %}
+<div class="story">
+  <div class="story-header">
+    <span class="story-num">{{ loop.index }}</span>
+    <div class="story-title">
+      <a href="{{ item.url }}" target="_blank" rel="noopener">{{ item.title }}</a>
+    </div>
+  </div>
+  <div class="story-meta">
+    ▲ {{ item.score }} &nbsp;|&nbsp;
+    <a href="{{ item.hn_url }}" target="_blank" rel="noopener">{{ item.comments }} 条评论</a>
+  </div>
+  {% if item.summary %}
+  <div class="story-summary">{{ item.summary }}</div>
+  {% endif %}
+</div>
+{% endfor %}
+
+{% if archive_dates %}
+<footer>
+  <strong>历史存档：</strong>
+  {% for d in archive_dates[:30] %}
+  <a href="archive/{{ d }}.html">{{ d }}</a>
+  {% endfor %}
+</footer>
+{% endif %}
+</body>
+</html>
