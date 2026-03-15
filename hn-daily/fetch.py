@@ -60,7 +60,9 @@ async def summarize(client: httpx.AsyncClient, sem: asyncio.Semaphore, story: di
     async with sem:
         try:
             resp = await client.post(KIMI_API_URL, json=payload, headers=headers, timeout=30)
-            resp.raise_for_status()
+            if resp.status_code != 200:
+                print(f"  Warning: summarize failed for {title!r}: {resp.status_code} {resp.text}", file=sys.stderr)
+                return ""
             return resp.json()["choices"][0]["message"]["content"].strip()
         except Exception as e:
             print(f"  Warning: summarize failed for {title!r}: {e}", file=sys.stderr)
