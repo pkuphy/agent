@@ -2,7 +2,6 @@
 """Fetch HackerNews Top 30 and summarize with Kimi API."""
 
 import asyncio
-import json
 import os
 import sys
 from datetime import date, datetime, timezone
@@ -11,8 +10,7 @@ from pathlib import Path
 import httpx
 from jinja2 import Environment, FileSystemLoader
 
-HN_TOP_URL = "https://hacker-news.firebaseio.com/v1/topstories.json"
-HN_ITEM_URL = "https://hacker-news.firebaseio.com/v1/item/{}.json"
+HN_ALGOLIA_URL = "https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage={n}"
 KIMI_API_URL = "https://api.moonshot.cn/v1/chat/completions"
 KIMI_MODEL = "kimi-k2.5"
 TOP_N = 30
@@ -21,16 +19,21 @@ CONCURRENCY = 5
 MOONSHOT_API_KEY = os.environ.get("MOONSHOT_API_KEY", "")
 
 
-async def fetch_top_ids(client: httpx.AsyncClient) -> list[int]:
-    resp = await client.get(HN_TOP_URL)
+async def fetch_top_stories(client: httpx.AsyncClient) -> list[dict]:
+    resp = await client.get(HN_ALGOLIA_URL.format(n=TOP_N))
     resp.raise_for_status()
-    return resp.json()[:TOP_N]
-
-
-async def fetch_item(client: httpx.AsyncClient, item_id: int) -> dict:
-    resp = await client.get(HN_ITEM_URL.format(item_id))
-    resp.raise_for_status()
-    return resp.json()
+    hits = resp.json().get("hits", [])
+    return [
+        {
+            "id": h.get("objectID", ""),
+            "title": h.get("title", ""),
+            "url": h.get("url") or f"https://news.ycombinator.com/item?id={h.get('objectID')}",
+            "score": h.get("points", 0),
+            "comments": h.get("num_comments", 0),
+        }
+        for h in hits
+        if h.get("title")
+    ]
 
 
 async def summarize(client: httpx.AsyncClient, sem: asyncio.Semaphore, story: dict) -> str:
@@ -80,11 +83,7 @@ async def main():
 
     print(f"Fetching HN top {TOP_N}...")
     async with httpx.AsyncClient() as client:
-        ids = await fetch_top_ids(client)
-
-        print("Fetching story details...")
-        stories = await asyncio.gather(*[fetch_item(client, i) for i in ids])
-        stories = [s for s in stories if s and s.get("title")]
+        stories = await fetch_top_stories(client)
 
         print("Summarizing with Kimi...")
         sem = asyncio.Semaphore(CONCURRENCY)
@@ -93,12 +92,8 @@ async def main():
     items = []
     for story, summary in zip(stories, summaries):
         items.append({
-            "id": story["id"],
-            "title": story.get("title", ""),
-            "url": story.get("url", f"https://news.ycombinator.com/item?id={story['id']}"),
+            **story,
             "hn_url": f"https://news.ycombinator.com/item?id={story['id']}",
-            "score": story.get("score", 0),
-            "comments": story.get("descendants", 0),
             "summary": summary,
         })
 
