@@ -33,4 +33,4 @@ agent/
 <!-- 在此维护子项目列表 -->
 | 目录 | 描述 | 技术栈 |
 |------|------|--------|
-| (待添加) | | |
+| `hn-daily` | HackerNews 每日摘要，Kimi K2.5 总结，部署到 GitHub Pages | Python / httpx / Jinja2 |
